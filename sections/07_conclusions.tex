@@ -1,0 +1,15 @@
+\section{Conclusions}
+\label{sec:conclusions}
+
+The cached class is the finite-field element.
+It sits under the matrix templates, and the driver switches to it by changing one dependency.
+Full addition, multiplication, and reciprocal tables make the product and the determinants about five times faster than polynomial arithmetic on this machine, once the matrix is large enough to hide a 1.18\,s fill.
+That crossover is between \(8 \times 8\), where the original field wins, and \(64 \times 64\), where the cached field wins on total time.
+The tables occupy about 159\,MB, so peak memory rises rather than falls at the sizes measured here.
+
+The same identity used by the driver held on every profiled size.
+A separate unit-test suite, comparing cached operations with the original field one element at a time, is the remaining check that those runs do not cover.
+The MPI blocked PLU determinant is the remaining performance question: the code path is specified, and the size at which it beats the cached sequential determinant is not yet measured.
+
+The group still owes that MPI series, the unit tests, and the presentation.
+The presentation is a separate slide deck and is not part of this source tree.

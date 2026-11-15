@@ -1,0 +1,20 @@
+\section{MPI Determinant}
+\label{sec:mpi}
+
+After the sequential cache, the determinant is also computed with a blocked PLU factorization distributed by MPI \cite{golub2013,mpi2021}.
+The program is a second binary.
+Rank 0 still generates both matrices and still forms \(C = AB\) sequentially, using the cached field.
+Only the three determinants are eligible for distribution.
+A sequential mode runs the original one-rank elimination, so the same matrices can be timed with and without MPI.
+
+In the MPI mode the panel is taken in column blocks.
+The block width is an argument of the run.
+Ranks cooperate on the panel factorization and the trailing-matrix update, and the entries required by every rank are broadcast.
+The field division in that factorization is the cached reciprocal followed by a multiply.
+The run still checks \(\det(C) = \det(A)\det(B)\).
+
+The break-even size is the smallest \(n\) at which this blocked run is faster than the cached sequential determinant on the same matrices.
+That pair of timings is not in this draft.
+The profile machine does not have an MPI library installed, and the MPI program is still on an open pull request rather than on the group default branch.
+Small \(n\) is expected to lose: the tables already removed most of the arithmetic cost, and a broadcast per block is paid even when the panel is tiny.
+The sizes, the rank count, the block width, and the first size at which MPI wins will be added here after those runs.

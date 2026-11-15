@@ -1,0 +1,103 @@
+\section{Cache Results}
+\label{sec:results}
+
+Table~\ref{tab:totals} lists total time and peak working set.
+Total time includes table construction on the cached runs.
+At \(n = 8\) that construction is the whole run: 1.179\,s against 0.009\,s for the original field.
+At \(n = 64\) the cached total drops below the original, 1.563\,s against 1.962\,s.
+At \(n = 256\) the totals are 25.3\,s and 120.1\,s.
+
+\begin{table}[!t]
+\caption{Total time and peak working set. A dash means that size was not run for that build.}
+\label{tab:totals}
+\centering
+\scriptsize
+\begin{tabular}{@{}rrrrr@{}}
+\toprule
+\(n\) & Cached (s) & Original (s) & Cached (MB) & Original (MB) \\
+\midrule
+8   & 1.179  & 0.009  & 158.6 & 4.9 \\
+32  & ---    & 0.248  & ---   & 4.6 \\
+64  & 1.563  & 1.962  & 159.4 & 5.4 \\
+128 & ---    & 15.062 & ---   & 7.9 \\
+256 & 25.291 & 120.142 & 172.3 & 18.2 \\
+512 & 194.403 & ---   & 213.9 & --- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The arithmetic excluding table construction is the matrix product plus the three determinants.
+That portion is 4.94 times faster at \(n = 64\) (0.394\,s cached, 1.948\,s original) and 4.98 times faster at \(n = 256\) (24.11\,s cached, 120.03\,s original).
+Table~\ref{tab:parts} splits the \(256 \times 256\) run.
+The product is about half of the arithmetic, and the three determinants are nearly equal, which matches one elimination each on \(A\), \(B\), and \(C = AB\).
+Cached time grew by a factor of 7.7 from \(n = 256\) to \(n = 512\), close to the factor of 8 expected from \(n^3\).
+
+\begin{table}[!t]
+\caption{Section times for \(n = 256\), in seconds.}
+\label{tab:parts}
+\centering
+\scriptsize
+\begin{tabular}{@{}lrr@{}}
+\toprule
+Section & Cached & Original \\
+\midrule
+Generate \(A\) and \(B\) & 0.014 & 0.107 \\
+Product \(C = AB\) & 12.298 & 56.971 \\
+\(\det(A)\) & 3.937 & 21.027 \\
+\(\det(B)\) & 3.939 & 21.036 \\
+\(\det(C)\) & 3.937 & 20.993 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[!t]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  ieee lines,
+  ymode=log,
+  ymin=0.005,
+  ylabel={Total time (s)},
+  xlabel={Matrix dimension \(n\)},
+  symbolic x coords={8,64,256},
+]
+\addplot coordinates {(8,1.179) (64,1.563) (256,25.291)};
+\addplot coordinates {(8,0.008522) (64,1.962) (256,120.142)};
+\legend{Cached, Original}
+\end{axis}
+\end{tikzpicture}
+\caption{Total runtime, including table construction. The vertical axis is logarithmic so the \(8 \times 8\) original run remains visible.}
+\label{fig:runtime}
+\end{figure}
+
+Peak memory tells a different story from the published laptop figures.
+The cached process sits near 159\,MB from \(n = 8\) through \(n = 64\), which is the addition and multiplication maps, and rises to 214\,MB at \(n = 512\) as the matrices grow.
+The original process is about 5\,MB until the matrices matter, and 18\,MB at \(n = 256\).
+On this implementation the cache adds memory.
+It does not shrink the matrices.
+Figure~\ref{fig:memory} shows the sizes that both builds ran.
+
+\begin{figure}[!t]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  ieee bars,
+  ymin=0,
+  ylabel={Peak working set (MB)},
+  xlabel={Matrix dimension \(n\)},
+  symbolic x coords={8,64,256},
+]
+\addplot coordinates {(8,158.57) (64,159.43) (256,172.26)};
+\addplot coordinates {(8,4.85) (64,5.35) (256,18.18)};
+\legend{Cached, Original}
+\end{axis}
+\end{tikzpicture}
+\caption{Peak working set on the same runs as Fig.~\ref{fig:runtime}.}
+\label{fig:memory}
+\end{figure}
+
+Extending the cached \(n^3\) trend from the 194\,s run at \(n = 512\) puts a \(4000 \times 4000\) cached run near 26 hours on this CPU.
+The same extrapolation of the original \(n = 256\) run puts the uncached \(4000 \times 4000\) case near 127 hours.
+The assignment notes of about 20 minutes cached and 6 hours 40 minutes original were measured on an Apple M3 Max \cite{russell2026assignment}.
+Those notes are a different machine and a different table layout.
+They are not a prediction for the map-based tables timed here.

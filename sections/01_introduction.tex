@@ -1,0 +1,25 @@
+\section{Introduction}
+\label{sec:introduction}
+
+The program builds two random matrices over a finite field, forms their product, and computes three determinants.
+It accepts a run when \(\det(AB) = \det(A)\det(B)\).
+The field has only 1331 elements, but each element is a polynomial of degree less than three with coefficients modulo 11, and every product reduces that polynomial modulo an irreducible of degree three.
+Gaussian elimination and the matrix product call those operations once per arithmetic step, so the cost is in the field, not in the surrounding loops.
+
+The assignment asks for a cached replacement of one class in that chain, evidence that the cached results match the original, and an MPI determinant that can be compared with the cached sequential run \cite{russell2026assignment}.
+Caching is in place.
+The MPI program is written and still needs the break-even measurements.
+
+The report addresses three questions:
+
+\begin{itemize}
+  \item Which class was cached, and where does it sit relative to the matrix code?
+  \item How do runtime and peak memory change when that class serves answers from tables?
+  \item For which matrix sizes does a blocked PLU determinant over MPI beat the cached sequential determinant?
+\end{itemize}
+
+Section~\ref{sec:chain} places the class in the dependency chain.
+Section~\ref{sec:cache} describes the tables.
+Section~\ref{sec:method} states the machine and the sizes that were run.
+Section~\ref{sec:results} reports the cache measurements.
+Section~\ref{sec:mpi} describes the MPI determinant and the comparison that is still open.

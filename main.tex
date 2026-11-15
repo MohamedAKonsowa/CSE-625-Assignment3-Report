@@ -1,0 +1,126 @@
+\documentclass[conference]{IEEEtran}
+\IEEEoverridecommandlockouts
+
+% --- Encoding and fonts ---
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+
+% --- Layout ---
+\usepackage{microtype}
+
+% --- Math ---
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsfonts}
+
+% --- Figures and tables ---
+\usepackage{graphicx}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{booktabs}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{stfloats}
+\usepackage{placeins}
+\usepackage{float}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\newcolumntype{L}{>{\raggedright\arraybackslash}X}
+
+\setlength{\dblfloatsep}{8pt plus 2pt minus 2pt}
+\setlength{\dbltextfloatsep}{8pt plus 2pt minus 2pt}
+\setcounter{topnumber}{4}
+\setcounter{dbltopnumber}{4}
+\setcounter{totalnumber}{6}
+\renewcommand{\topfraction}{0.95}
+\renewcommand{\dbltopfraction}{0.95}
+\renewcommand{\textfraction}{0.05}
+\renewcommand{\floatpagefraction}{0.7}
+\renewcommand{\dblfloatpagefraction}{0.7}
+\raggedbottom
+
+\makeatletter
+\setlength{\@fptop}{0pt}
+\setlength{\@fpsep}{8pt plus 1pt minus 1pt}
+\setlength{\@fpbot}{0pt plus 1fil}
+\setlength{\@dblfptop}{0pt}
+\setlength{\@dblfpsep}{8pt plus 1pt minus 1pt}
+\setlength{\@dblfpbot}{0pt plus 1fil}
+\makeatother
+
+% --- Bibliography ---
+\usepackage[backend=biber,style=ieee,sorting=none]{biblatex}
+\addbibresource{bibliography.bib}
+\renewcommand*{\bibfont}{\footnotesize}
+
+% --- Links ---
+\usepackage{xurl}
+\usepackage[hidelinks]{hyperref}
+\usepackage{cleveref}
+
+\pgfplotsset{
+  ieee common/.style={
+    width=0.92\linewidth,
+    height=4.4cm,
+    ylabel style={font=\small},
+    xlabel style={font=\small},
+    xtick=data,
+    axis on top,
+    ymajorgrids=true,
+    grid style={gray!25},
+    tick label style={font=\scriptsize},
+    legend style={
+      at={(0.5,-0.22)},
+      anchor=north,
+      legend columns=2,
+      font=\scriptsize,
+      draw=black!45,
+    },
+    legend cell align=left,
+  },
+  ieee bars/.style={
+    ieee common,
+    ybar,
+    bar width=7pt,
+    enlarge x limits=0.25,
+  },
+  ieee lines/.style={
+    ieee common,
+    enlarge x limits=0.15,
+    mark=*,
+    mark size=1.6pt,
+  }
+}
+
+\begin{document}
+
+\title{Caching Finite-Field Arithmetic\\for Determinant Evaluation}
+
+\author{%
+\IEEEauthorblockN{Jacob Nance}
+\and
+\IEEEauthorblockN{Fernanda Gonzalez}
+\and
+\IEEEauthorblockN{Francisco Chagua}
+\and
+\IEEEauthorblockN{Nicholas Hooper}
+\and
+\IEEEauthorblockN{Nicholas Johnson}
+\and
+\IEEEauthorblockN{Mohamed Konsowa}
+}
+
+\maketitle
+
+\input{sections/00_abstract}
+\input{sections/01_introduction}
+\input{sections/02_dependency_chain}
+\input{sections/03_caching}
+\input{sections/04_methodology}
+\input{sections/05_results}
+\input{sections/06_mpi}
+\input{sections/07_conclusions}
+
+\printbibliography
+
+\end{document}
