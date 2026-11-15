@@ -1,10 +1,10 @@
 # CSE 625 Assignment 3 report
 
 IEEE conference paper for the finite-field determinant assignment.
-The formatting follows the group report in [CSE-625-Group2](https://github.com/ntjohn04/CSE-625-Group2): `IEEEtran`, one section per file, and a GitHub Action that builds the PDF.
+The formatting follows the group report in [CSE-625-Group2](https://github.com/ntjohn04/CSE-625-Group2).
 
-The sections are headings only.
-The PowerPoint deck is not in this repo.
+Yellow boxes in the PDF name who still has to write that section.
+The cache measurements and the MPI timings are filled in.
+Delete every box before submission.
 
 Pushing to any branch runs the LaTeX action and uploads `main.pdf`.
-A tag named `v*` also attaches that PDF to a GitHub release.

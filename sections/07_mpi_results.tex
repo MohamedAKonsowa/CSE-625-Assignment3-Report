@@ -1,0 +1,63 @@
+\section{MPI Measurements}
+\label{sec:mpi-results}
+
+\writer{Mohamed Konsowa}{%
+The numbers below are filled in.
+Nicholas Johnson's description of the algorithm belongs in Section~\ref{sec:mpi}, which is still empty.}
+
+These runs used the course MPI cluster, Slurm partition \texttt{demo}, OpenMPI, and four machines with two ranks on each machine.
+The job limit on that partition is 5 minutes.
+The field is the cached fork.
+Block size is 32.
+Sequential mode is one rank.
+The eight-rank mode uses all four machines.
+Matrix multiplication stayed on rank 0 in both modes, which is why the product time barely changes.
+Table~\ref{tab:mpi} is the eight-rank comparison.
+Every run reported the identity as true, and the \(512 \times 512\) determinants matched between the two modes.
+
+\begin{table}[!t]
+\caption{Cached sequential time against eight MPI ranks on four machines. Determinant time is the sum of the three determinant calls.}
+\label{tab:mpi}
+\centering
+\scriptsize
+\begin{tabular}{@{}rrrrr@{}}
+\toprule
+\(n\) & Seq. (s) & 8 ranks (s) & Seq. dets (s) & 8-rank dets (s) \\
+\midrule
+64  & 1.8  & 2.6  & 0.25 & 0.21 \\
+128 & 5.5  & 5.6  & 2.04 & 1.09 \\
+256 & 35.0 & 27.4 & 15.6 & 5.7 \\
+512 & 272  & 200  & 120  & 34 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The determinants are already faster with eight ranks at \(n = 64\), and clearly faster at \(n = 128\) (1.09\,s against 2.04\,s).
+The whole program, including the sequential product, is faster starting at \(n = 256\) (27.4\,s against 35.0\,s).
+At \(n = 512\) the determinant portion drops from 120\,s to 34\,s, and the whole program from 272\,s to 200\,s.
+A separate one-node, two-rank sweep was slower than eight ranks.
+With two ranks the whole program was faster only at \(n = 256\), and only by about 2\,s.
+Figure~\ref{fig:mpi} shows the eight-rank determinant times.
+
+\begin{figure}[!t]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  ieee lines,
+  ymode=log,
+  ymin=0.1,
+  ylabel={Determinant time (s)},
+  xlabel={Matrix dimension \(n\)},
+  symbolic x coords={64,128,256,512},
+]
+\addplot coordinates {(64,0.25) (128,2.04) (256,15.58) (512,119.70)};
+\addplot coordinates {(64,0.21) (128,1.09) (256,5.66) (512,33.53)};
+\legend{Sequential, 8 ranks}
+\end{axis}
+\end{tikzpicture}
+\caption{Sum of the three determinant calls on the cluster. The vertical axis is logarithmic.}
+\label{fig:mpi}
+\end{figure}
+
+\(512 \times 512\) sequential took 272\,s inside a 300\,s job, so a larger cluster run was not attempted.
+The same \(n^3\) step that turns the 35\,s run at \(n = 256\) into the 272\,s run at \(n = 512\) is why a \(4000 \times 4000\) case does not fit this partition.

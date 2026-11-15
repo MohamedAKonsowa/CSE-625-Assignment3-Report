@@ -92,6 +92,18 @@
   }
 }
 
+% Draft marker. Delete each boxed note before the final submission.
+\newcommand{\writer}[2]{%
+  \par\medskip
+  \noindent\fcolorbox{black}{yellow!25}{%
+    \parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule\relax}{%
+      \raggedright\textbf{WRITE THIS SECTION: #1.}\\[2pt]
+      #2%
+    }%
+  }%
+  \par\medskip
+}
+
 \begin{document}
 
 \title{Caching Finite-Field Arithmetic\\for Determinant Evaluation}
@@ -116,9 +128,11 @@
 \input{sections/01_introduction}
 \input{sections/02_dependency_chain}
 \input{sections/03_caching}
-\input{sections/04_methodology}
+\input{sections/04_unit_tests}
 \input{sections/05_results}
 \input{sections/06_mpi}
-\input{sections/07_conclusions}
+\input{sections/07_mpi_results}
+\input{sections/08_conclusions}
+\input{sections/09_additional}
 
 \end{document}
