@@ -1,8 +1,2 @@
 \begin{abstract}
-Matrix entries in this program are elements of the finite field of order \(11^3 = 1331\).
-Each arithmetic operation reduces a polynomial modulo a fixed irreducible, so a determinant repeats the same products and sums many times.
-The finite-field element type was replaced by a drop-in version that fills addition, multiplication, and reciprocal tables once and reuses them.
-On one AMD Ryzen 9 7900X thread, the cached arithmetic was about five times faster than the original polynomial arithmetic at \(64 \times 64\) and at \(256 \times 256\).
-The tables cost about 159\,MB and made the cached run slower for an \(8 \times 8\) matrix.
-A blocked PLU determinant over MPI is implemented and not yet timed against the cached sequential determinant.
 \end{abstract}

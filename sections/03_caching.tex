@@ -1,27 +1,2 @@
 \section{Cached Field Arithmetic}
 \label{sec:cache}
-
-The cached element keeps the public constructors, the arithmetic methods, and the header paths of the original element \cite{nance2026fields}.
-Callers select it by pointing the finite-field dependency at that fork.
-The matrix sources are unchanged.
-
-The field order is \(11^3 = 1331\), so an element has a dense index in \(\{0, \ldots, 1330\}\).
-On first initialization the element walks every index and stores three tables:
-
-\begin{itemize}
-  \item addition, keyed by \(i \cdot 1331 + j\), for every pair of elements;
-  \item multiplication, with the same key;
-  \item reciprocals, for every nonzero element.
-\end{itemize}
-
-Each table is a \texttt{std::unordered\_map} from a 64-bit key to a 64-bit index.
-A later \texttt{add} or \texttt{multiply} looks up the key and rebuilds the element from the stored index.
-A miss falls back to the original polynomial operation.
-In these runs the tables are filled before the matrices are generated, so the timed product and determinants hit the tables.
-Filling both pair tables costs one pass over \(1331^2\) polynomial operations and about 1.18\,s on the test machine.
-The reciprocal table is filled in the same pass.
-
-The map stores answers, not a smaller representation of an element.
-Matrix storage is therefore the same size as in the original field, and the process also holds the tables for the whole run.
-Negation is not tabulated.
-Division is a multiply by the stored reciprocal, which is the operation elimination uses for the pivot.

@@ -1,25 +1,2 @@
 \section{Measurement Method}
 \label{sec:method}
-
-Both builds use the same driver, the same seed (123456), and the same compile-time dimension.
-The cached build fetches the finite-field fork at commit \texttt{8d784eaf}.
-The original build fetches the instructor finite-field commit \texttt{74b3d569}.
-Matrices come from the same instructor commit in both builds.
-The compiler is g++ 16.2 with \texttt{-O3} and \texttt{NDEBUG}.
-Each executable is one process and one thread.
-
-The machine is an AMD Ryzen 9 7900X with 12 cores and 32\,GB of RAM, running 64-bit Windows.
-Times in the tables are the driver's steady-clock readings.
-Peak memory is the peak working set reported by Windows for that process.
-The working set includes the executable, the tables, and the matrices.
-
-Dimensions were compiled and run one at a time.
-The cached series is \(n \in \{8, 64, 256, 512\}\).
-The original series is \(n \in \{8, 32, 64, 128, 256\}\).
-Every run printed the same identity check, \(\det(C) = \det(A)\det(B)\), and every run reported the identity as true.
-A \(4000 \times 4000\) pair was not run.
-The \(n^3\) growth from 256 to 512 on the cached build puts that size near a day on this machine, so the larger assignment sizes are extrapolated in Section~\ref{sec:results} and marked as extrapolations.
-
-These figures are the first profile of the cached fork on this PC.
-Further sizes, and a repeat on another machine, can be added without changing the method.
-The MPI comparison uses a different binary and is not part of this series.

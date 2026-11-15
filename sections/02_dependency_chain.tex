@@ -1,19 +1,2 @@
 \section{Dependency Chain}
 \label{sec:chain}
-
-The driver links two libraries.
-\texttt{algebra::matrices} stores the entries and implements matrix multiplication and row swaps.
-\texttt{algebra::finite\_fields} supplies the entry type.
-The driver fixes that type as \(\mathtt{FiniteField}\langle 11,3\rangle\), so every entry is an element of a degree-3 extension of the prime field \(\mathbb{F}_{11}\) \cite{russell2026fields,russell2026matrices}.
-Polynomial arithmetic used by the field lives in a third library, pulled in by the finite-field package.
-The matrices never reduce polynomials themselves.
-They call \texttt{add}, \texttt{multiply}, \texttt{negate}, and \texttt{reciprocal} on the element type.
-
-That split is why the finite-field element is the class to cache.
-A change inside the element type is visible to multiplication and to elimination without editing the matrix templates or the driver.
-The irreducible modulus stays the one chosen by the field's deterministic search.
-On the profiled build the modulus was \(x^3 + x + 4\).
-
-The sequential driver still computes \(C = AB\) with the library matrix product, then runs Gaussian elimination with partial pivoting for \(\det(A)\), \(\det(B)\), and \(\det(C)\).
-The elimination is local to the driver.
-It is the same algorithm for the original field and the cached field, so a timing difference between those two builds is a difference in element arithmetic.
