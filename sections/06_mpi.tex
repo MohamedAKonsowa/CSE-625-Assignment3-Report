@@ -1,8 +1,103 @@
+% Block size b (\bw), trailing size n-b (\mw), full size n (\nw)
+\def\bw{0.6}
+\def\mw{1.8}
+\def\nw{2.4}
+
+% \blk{xshift}{style11}{style12}{style21}{style22}{lab11}{lab12}{lab21}{lab22}
+\newcommand{\blk}[9]{%
+  \begin{scope}[xshift=#1cm]
+    \path[#2] (0,\mw)   rectangle (\bw,\nw);
+    \path[#3] (\bw,\mw) rectangle (\nw,\nw);
+    \path[#4] (0,0)     rectangle (\bw,\mw);
+    \path[#5] (\bw,0)   rectangle (\nw,\mw);
+    \node at ({\bw/2},{(\mw+\nw)/2})     {#6};
+    \node at ({(\bw+\nw)/2},{(\mw+\nw)/2}) {#7};
+    \node at ({\bw/2},{\mw/2})           {#8};
+    \node at ({(\bw+\nw)/2},{\mw/2})       {#9};
+  \end{scope}}
+
 \section{MPI Determinant}
 \label{sec:mpi}
 
-\writer{Nicholas Johnson}{%
-This is your section.
-Describe the blocked PLU determinant: what rank 0 still does alone, how a panel is factored, how the trailing update is split across ranks, and how the block size is chosen.
-The measurements in Section~\ref{sec:mpi-results} ran your branch \texttt{feature/mpi-block-plu} at commit \texttt{12b7cd3}.
-That branch was not merged into the group \texttt{main} when these runs were taken.}
+The baseline sequential determinant algorithm uses Gaussian elimination steps directly. 
+In order to parallelize the algorithm, the method is first extended to a PLU factorization.
+The PLU factorization allows for more control over the parallelization of the workload.
+
+The PLU decomposition of a matrix $A$ gives a factorization of the following form:
+\[
+PA = LU
+\]
+where $P$ is a permutation matrix, $L$ is a unit lower triangular matrix, and $U$ is an upper triangular matrix.
+$P$, $L$, and $U$ are obtained during the Gaussian elimination process, where $P$ is used to keep track of row swaps, $L$ contains the multipliers used to eliminate entries below the pivots, and $U$ is the resulting upper triangular matrix.
+In the baseline sequential algorithm, $L$ is never used, as its determinant is always $1$.
+When using PLU in order to parallelize the algorithm, $L$ is needed for intermediate computations.
+
+The simplest way to parallelize the PLU decomposition is to independently distribute the rows of the matrix as they are updated based on the current pivot.
+The sequential component of this algorithm is the pivot selection and row swapping, while the bulk of the work is in the row elimination, which can be done in parallel.
+
+Blocked PLU decomposition is a direct extension of this parallelization strategy.
+Instead of distributing workloads for every pivot, the workload is distributed for every $b$ pivots, where $b$ is the block size.
+The sequential component of this algorithm now includes the full factorization of $b$ columns at each iterations, while the bulk of the work is still in the row elimination, which can be done in parallel.
+This allows for control of the tradeoff between the degree of parallelization and the communication overhead.
+A larger $b$ reduces the number of iterations and thus communication overhead, but reduces the degree of parallelization.
+
+\begin{figure}[t]
+  \centering
+  \resizebox{\linewidth}{!}{%
+  \begin{tikzpicture}[
+      Ac/.style={draw, line width=0.4pt, fill=gray!8},
+      Lc/.style={draw, line width=0.4pt, fill=teal!18},
+      Uc/.style={draw, line width=0.4pt, fill=violet!18},
+      Zc/.style={draw, line width=0.4pt, fill=white}]
+
+    % P A
+    \node at (-0.4,{\nw/2}) {$P$};
+    \blk{0}{Ac}{Ac}{Ac}{Ac}{$A_{11}$}{$A_{12}$}{$A_{21}$}{$A_{22}$}
+    \node at ({\bw/2},-0.3)       {$b$};
+    \node at ({(\bw+\nw)/2},-0.3) {$n-b$};
+
+    % = L
+    \node at (2.75,{\nw/2}) {$=$};
+    \blk{3.1}{Lc}{Zc}{Lc}{Lc}{$L_{11}$}{$0$}{$L_{21}$}{$L_{22}$}
+
+    % . U
+    \node at (5.85,{\nw/2}) {$\cdot$};
+    \blk{6.2}{Uc}{Uc}{Zc}{Uc}{$U_{11}$}{$U_{12}$}{$0$}{$U_{22}$}
+  \end{tikzpicture}%
+  }
+  \caption{Blocked $PLU$ factorization with block size $b$.}
+\end{figure}
+
+For the blocked PLU decomposition, $b = 1$ corresponds to simple per-pivot parallelization, while $b = n$ corresponds to the sequential algorithm.
+For any given machine and network configuration, there is an optimal block size that maximizes performance.
+When communication is fast, such as on a single machine, the optimal block size is small subject to cache constraints, while for slower communication, such as across a network, the optimal block size is larger.
+
+A simple way to implement the blocked PLU decomposition in a distributed memory system using MPI is to let rank 0 own all the matrices, and distribute the rows of the matrix as needed to the other ranks for elimination.
+This means rank 0 holds the entirety of $A$, $P$, $L$, and $U$, while other ranks hold nothing except temporary buffers for local views of the parallelized rows.
+In this case, rank 0 factors the current panel to obtain the row swaps in $P$, $L_{11}$, $L_{21}$, and $U_{11}$, and computes $U_{12} = L_{11}^{-1} A_{12}$.
+The remaining ranks then compute the update of the trailing submatrix, the Schur complement $S = A_{22} - L_{21} U_{12}$, in parallel.
+The algorithm then proceeds recursively on $S$, whose factorization yields $L_{22}$ and $U_{22}$.
+
+There are more efficient ways to implement blocked PLU with distributed memory.
+Most importantly they involve distributing ownership of the matrices which reduces bottlenecking in communication.
+However, these implementations are more complex while the underlying math and motivation are the same.
+
+\begin{algorithm}
+\caption{MPI blocked PLU determinant}
+\begin{algorithmic}[1]
+\Require $A \in \mathbb{R}^{n \times n}$ on rank 0, block size $b$
+\Ensure $\det(A)$ on rank 0
+\State \textbf{rank 0:} $U \gets A$, $s \gets 0$
+\For{each panel of $b$ columns}
+    \State \textbf{rank 0:} factor panel $\to L_{11}, L_{21}, U_{11}$;
+           apply swaps to full rows; $s \gets s + \#\text{swaps}$
+    \State \textbf{rank 0:} $U_{12} \gets L_{11}^{-1} A_{12}$
+    \State \texttt{MPI\_Bcast}(singular flag); \textbf{if} singular \textbf{then return} $0$
+    \State \texttt{MPI\_Bcast}($U_{12}$)
+    \State \texttt{MPI\_Scatterv}(rows of $L_{21}$ and $A_{22}$)
+    \State all ranks: $S_\text{loc} \gets A_{22,\text{loc}} - L_{21,\text{loc}}\, U_{12}$
+    \State \texttt{MPI\_Gatherv}($S_\text{loc}$) into $A_{22}$ on rank 0
+\EndFor
+\State \textbf{rank 0:} \Return $(-1)^s \prod_{i=1}^{n} u_{ii}$
+\end{algorithmic}
+\end{algorithm}
