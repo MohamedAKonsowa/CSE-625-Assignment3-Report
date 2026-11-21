@@ -1,8 +1,8 @@
 \section{MPI Measurements}
 \label{sec:mpi-results}
 
-The MPI timings used Nicholas Johnson's branch \texttt{feature/mpi-block-plu} at commit \texttt{12b7cd3}, cloned directly because that branch was not yet merged into the group \texttt{main}.
-The field dependency on that branch is the same cached fork used in Section~\ref{sec:results}.
+The MPI timings used Nicholas Johnson's blocked PLU program.
+The field is the same cached finite field used in Section~\ref{sec:results}.
 Jobs were submitted with \texttt{sbatch} to the course cluster's Slurm partition \texttt{demo}.
 That partition allows 5 minutes and has four machines, with two CPUs on each.
 The MPI library is OpenMPI, loaded on the compute nodes.

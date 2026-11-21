@@ -1,7 +1,17 @@
 \section{Dependency Chain}
 \label{sec:chain}
 
-\writer{Nicholas Hooper}{%
-This is your section.
-Explain where \texttt{FiniteField} sits relative to the matrix library and the driver, and how \texttt{cmake/Dependencies.cmake} on the group repository was pointed at Jacob Nance's fork.
-The profiling runs used that dependency as it already stood on \texttt{main}.}
+The program is three libraries deep.
+The driver in \texttt{src/main.cpp} builds the two random matrices, multiplies them, and computes the three determinants.
+Each matrix entry is an element of \texttt{FiniteField} of order \(11^3\).
+
+\texttt{FiniteField} lives in the finite-field library.
+The matrix library does not know about that field.
+Its \texttt{Matrix} template calls addition, multiplication, and reciprocal on whatever entry type it is given, so the same matrix code runs for the cached field and for the original field.
+The driver is the only place that chooses \texttt{FiniteField<11, 3>}.
+
+\texttt{cmake/Dependencies.cmake} fetches the finite-field library first and the matrix library second.
+On the group repository that finite-field dependency points at Jacob Nance's fork, and the matrix library stays the instructor's copy.
+Turning the cache on or off is a change to that one dependency.
+The driver and the matrix code stay as they are.
+The measurements in Section~\ref{sec:results} used the dependency that was already on \texttt{main}.

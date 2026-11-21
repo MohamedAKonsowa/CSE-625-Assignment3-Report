@@ -2,10 +2,10 @@
 \label{sec:results}
 
 The cache comparison used the group driver on one process, with seed 123456.
-The cached build links Jacob Nance's finite-field fork at commit \texttt{8d784eaf}.
-The original build links the instructor field at commit \texttt{74b3d569}.
-The matrix library is the same instructor commit in both builds.
-The compiler is g++ 16.2 with \texttt{-O3} and \texttt{NDEBUG}.
+One build links Jacob Nance's cached finite field.
+The other links the instructor's original finite field.
+Both builds use the same matrix library and the same driver.
+The compiler is g++ 16.2.
 The machine is an AMD Ryzen 9 7900X with 12 cores and 32\,GB of RAM, running 64-bit Windows.
 Only one thread was used.
 Times in Table~\ref{tab:cache} are the driver's steady clock, including construction of the addition and multiplication tables on the cached runs.
@@ -22,9 +22,9 @@ The dimension is a compile-time constant, so each size is a separate binary.
 \(n\) & Cached (s) & Original (s) & Cached (MB) & Original (MB) \\
 \midrule
 8   & 1.18  & 0.009 & 159 & 4.9 \\
-32  & ---   & 0.25  & --- & 4.6 \\
+32  & 1.22  & 0.25  & 159 & 4.6 \\
 64  & 1.56  & 1.96  & 159 & 5.4 \\
-128 & ---   & 15.1  & --- & 7.9 \\
+128 & 4.27  & 15.1  & 162 & 7.9 \\
 256 & 25.3  & 120.1 & 172 & 18.2 \\
 512 & 194.4 & ---   & 214 & --- \\
 \bottomrule
