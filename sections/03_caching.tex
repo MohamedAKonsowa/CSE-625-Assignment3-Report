@@ -1,7 +1,47 @@
 \section{Cached Field Arithmetic}
 \label{sec:cache}
 
-\writer{Jacob Nance}{%
-This is your section.
-Describe the cached finite-field class: which operations are stored, how a result is keyed, what happens on a miss, and how the public interface stayed compatible with the matrix code.
-The measurements in Section~\ref{sec:results} used your cached field against the instructor's original field.}
+Arithmetic in a finite field is limited to a small set of results determined by the field's cardinality \(q\).
+For addition and multiplication, this requires up to \(q^2\) entries in each cache.
+The reciprocal cache is smaller, with at most \(q\) entries.
+Division does not require a separate cache because it is implemented as multiplication by the reciprocal.
+
+The implementation stores each cache in an
+\texttt{std::unordered\_map<int64\_t, int64\_t>}.
+Using integer keys avoids a custom hash function for the finite-field polynomial type.
+Before an arithmetic result can be cached, each polynomial is converted to an integer index.
+Listing~\ref{lst:index} shows the \texttt{index()} implementation.
+
+\begin{lstlisting}[style=cpp,
+  caption={Conversion from a finite-field polynomial to an integer index},
+  label={lst:index}]
+std::uint64_t index() const
+{
+    std::uint64_t result = 0;
+    std::uint64_t mult = 1;
+
+    for (std::size_t i = 0; i < K; i++)
+    {
+        result += value_.coefficient(i).representative() * mult;
+        mult *= P;
+    }
+
+    return result;
+}
+\end{lstlisting}
+
+The cache mapping key for an operation involving elements with indices \(i\) and \(j\) is
+\[
+k(i,j)=i+qj.
+\]
+The existing \texttt{from\_index()} method converts the resulting stored index back into a polynomial.
+Reciprocal elements are stored as a one-to-one mapping between an element index and the index of its reciprocal.
+The cache entries are loaded once when the field is initialized.
+
+The updated implementation is located in the
+\texttt{algebra-finite-fields-group2} repository:
+\url{https://github.com/JacobNance142/algebra-finite-fields-group2}.
+The custom \texttt{FiniteField} class was included in the
+\texttt{algebra-assignment} CMake configuration, allowing the determinant
+and matrix code to use the cached operations without a public-interface
+change.
