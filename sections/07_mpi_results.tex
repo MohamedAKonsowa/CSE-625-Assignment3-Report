@@ -1,8 +1,7 @@
 \section{MPI Measurements}
 \label{sec:mpi-results}
 
-The MPI timings used Nicholas Johnson's branch \texttt{feature/mpi-block-plu} at commit \texttt{12b7cd3}, cloned directly because that branch was not yet merged into the group \texttt{main}.
-The field dependency on that branch is the same cached fork used in Section~\ref{sec:results}.
+The MPI timings used Nicholas Johnson's blocked PLU program on the cached finite field from Section~\ref{sec:results}.
 Jobs were submitted with \texttt{sbatch} to the course cluster's Slurm partition \texttt{demo}.
 That partition allows 5 minutes and has four machines, with two CPUs on each.
 The MPI library is OpenMPI, loaded on the compute nodes.
@@ -11,14 +10,14 @@ Sequential mode launches one rank and uses the one-rank elimination.
 The eight-rank mode places two ranks on each of the four machines.
 Both modes use seed 123456, so matrix \(A\) is the same matrix the full driver builds.
 
-The assignment comparison is the determinant, not the product.
+The assignment comparison is one determinant, not the product.
 The full driver still forms \(C = AB\) and checks \(\det(C) = \det(A)\det(B)\).
 That check passed for every full-program size in Table~\ref{tab:mpi}.
-A second timing mode then builds the same \(A\) and \(B\) and times only \(\det(A)\).
-It does not form \(C\).
-At \(n \in \{64, 128, 256, 512\}\) the printed \(\det(A)\) matched the full driver.
-At \(n = 768\) the sequential and eight-rank runs printed the same field element, \(6 + 8x + 10x^2\).
-The identity was not repeated at that size because the product was omitted.
+A second timing run builds the same \(A\) and \(B\) and times only \(\det(A)\).
+It calls the same determinant routines and does not form \(C\).
+At every size in Table~\ref{tab:det} the sequential and eight-rank runs printed the same field element.
+Through \(n = 512\) that element also matches \(\det(A)\) from the full driver.
+At \(n = 768\) the identity was not repeated, because the product was omitted, and both modes printed \(6 + 8x + 10x^2\).
 
 \begin{table}[!t]
 \caption{One determinant of the same matrix \(A\). Sequential is one rank. Eight ranks use four machines and block size 32.}
@@ -29,19 +28,21 @@ The identity was not repeated at that size because the product was omitted.
 \toprule
 \(n\) & Sequential (s) & 8 ranks (s) \\
 \midrule
-64  & 0.078 & 0.071 \\
-128 & 0.644 & 0.330 \\
-256 & 5.03  & 1.79  \\
-512 & 38.55 & 10.58 \\
-768 & 124.0 & 31.00 \\
+32  & 0.010 & 0.013 \\
+64  & 0.079 & 0.070 \\
+128 & 0.626 & 0.329 \\
+256 & 4.72  & 1.82  \\
+512 & 38.0  & 11.0  \\
+768 & 121.1 & 32.9  \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Eight ranks are already slightly faster at \(n = 64\), 0.071\,s against 0.078\,s.
-That is the smallest tested size at which MPI wins on the determinant.
-The gap then widens: 2.0 times at \(n = 128\), 2.8 times at \(n = 256\), 3.6 times at \(n = 512\), and 4.0 times at \(n = 768\).
-The step from 38.55\,s at \(n = 512\) to 124.0\,s at \(n = 768\) is a factor of 3.2, close to the factor of 3.4 from \((768/512)^3\).
+Eight ranks are slower at \(n = 32\), 0.013\,s against 0.010\,s.
+That is the communication overhead on a small matrix.
+The smallest tested size at which eight ranks are faster is \(n = 64\), 0.070\,s against 0.079\,s.
+The gap then widens: 1.9 times at \(n = 128\), 2.6 times at \(n = 256\), 3.4 times at \(n = 512\), and 3.7 times at \(n = 768\).
+The step from 38.0\,s at \(n = 512\) to 121\,s at \(n = 768\) is a factor of 3.2, close to the factor of 3.4 from \((768/512)^3\).
 Figure~\ref{fig:mpi} plots Table~\ref{tab:det}.
 
 \begin{figure}[!t]
@@ -50,13 +51,13 @@ Figure~\ref{fig:mpi} plots Table~\ref{tab:det}.
 \begin{axis}[
   ieee lines,
   ymode=log,
-  ymin=0.05,
+  ymin=0.006,
   ylabel={One determinant (s)},
   xlabel={Matrix dimension \(n\)},
-  symbolic x coords={64,128,256,512,768},
+  symbolic x coords={32,64,128,256,512,768},
 ]
-\addplot coordinates {(64,0.078277) (128,0.644309) (256,5.030128) (512,38.546984) (768,123.966756)};
-\addplot coordinates {(64,0.071073) (128,0.329572) (256,1.788132) (512,10.575579) (768,31.002278)};
+\addplot coordinates {(32,0.010378) (64,0.079271) (128,0.626235) (256,4.716152) (512,37.961439) (768,121.075909)};
+\addplot coordinates {(32,0.012569) (64,0.070360) (128,0.329299) (256,1.822853) (512,11.003577) (768,32.869726)};
 \legend{Sequential, 8 ranks}
 \end{axis}
 \end{tikzpicture}
@@ -64,11 +65,11 @@ Figure~\ref{fig:mpi} plots Table~\ref{tab:det}.
 \label{fig:mpi}
 \end{figure}
 
-Table~\ref{tab:mpi} keeps the earlier full-program runs.
+Table~\ref{tab:mpi} is the full driver on the same cluster.
 Those runs pay for the table fill, the product, and three determinants.
-The product stays on rank 0 in both modes, so eight ranks do not speed it up.
-At \(n = 512\) that product was 151\,s sequential and 164\,s with eight ranks.
-The extra time is consistent with the other ranks waiting while one rank multiplies.
+The product stays on rank 0 in both modes.
+At \(n = 512\) that product was 139\,s sequential and 149\,s with eight ranks.
+The extra time is the other ranks waiting while one rank multiplies.
 
 \begin{table}[!t]
 \caption{Full driver on the same cluster. Total time includes the product. Determinant time is the sum of \(\det(A)\), \(\det(B)\), and \(\det(C)\).}
@@ -79,29 +80,31 @@ The extra time is consistent with the other ranks waiting while one rank multipl
 \toprule
 \(n\) & Seq. (s) & 8 ranks (s) & Seq. dets (s) & 8-rank dets (s) \\
 \midrule
-64  & 1.76 & 2.61 & 0.25 & 0.21 \\
-128 & 5.53 & 5.61 & 2.04 & 1.09 \\
-256 & 35.0 & 27.4 & 15.6 & 5.66 \\
-512 & 272  & 200  & 120  & 33.5 \\
+64  & 1.64 & 2.38 & 0.23 & 0.20 \\
+128 & 5.04 & 5.16 & 1.91 & 1.01 \\
+256 & 32.8 & 25.7 & 14.9 & 5.47 \\
+512 & 254  & 183  & 113  & 32.3 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-On the full program, eight ranks are slightly faster on the three determinants at \(n = 64\), but the whole program is still slower, 2.61\,s against 1.76\,s.
-At \(n = 128\) the program is essentially tied.
-The smallest tested size at which the whole program is faster is \(n = 256\), 27.4\,s against 35.0\,s.
-At \(n = 512\) the three determinants fall from 120\,s to 33.5\,s, while the program only falls from 272\,s to 200\,s, because the product remains.
+On the full program, eight ranks are already faster on the three determinants at \(n = 64\), 0.20\,s against 0.23\,s, but the whole program is still slower, 2.38\,s against 1.64\,s.
+At \(n = 128\) the program is essentially tied, 5.16\,s against 5.04\,s, while the determinants drop from 1.91\,s to 1.01\,s.
+The smallest tested size at which the whole program is faster is \(n = 256\), 25.7\,s against 32.8\,s.
+At \(n = 512\) the three determinants fall from 113\,s to 32.3\,s, while the program falls from 254\,s to 183\,s, because the product remains.
 
-A two-rank sweep on one machine used the full driver at \(n \in \{64, 128, 256\}\).
-The determinant sums were 0.23\,s against 0.23\,s at \(n = 64\), 1.91\,s against 1.61\,s at \(n = 128\), and 15.9\,s against 12.6\,s at \(n = 256\).
-The whole program was faster with two ranks only at \(n = 256\), 33.9\,s against 35.6\,s.
+Two ranks on one machine used the same full driver.
+At \(n = 64\) the determinant sum is 0.21\,s sequential and 0.24\,s with two ranks, and the program is 1.61\,s against 2.42\,s.
+At \(n = 128\) the determinants are 1.90\,s against 1.63\,s, while the program is 5.06\,s against 5.80\,s.
+At \(n = 256\) the determinants are 14.5\,s against 11.7\,s, and the program is 31.3\,s against 32.0\,s.
+Two ranks therefore win the determinant sum at \(n = 128\) and \(n = 256\), and they do not win the whole program at any of these sizes.
+Each machine in the partition has two CPUs, so this is the single-machine comparison.
 The identity check passed on that sweep as well.
 
 The 5-minute job limit is what stops a larger full-program run.
-The \(512 \times 512\) sequential driver took 272\,s, and an attempt to follow it with eight ranks in the same job was cancelled.
-The eight-rank \(512 \times 512\) row in Table~\ref{tab:mpi} is a separate job.
-Skipping the product left room for both modes at \(n = 768\), 124\,s then 31\,s, in one job.
-A sequential \(1024 \times 1024\) determinant would be about another factor of 2.4 beyond the 124\,s point, near 5 minutes before the nodes boot, so it was not run.
-Extending the full-program 272\,s measurement at \(n = 512\) by \((4000/512)^3 \approx 477\) puts a cached sequential \(4000 \times 4000\) run near 36 hours on these cluster CPUs.
+The sequential driver at \(n = 512\) took 254\,s, so the eight-rank run at that size was a separate job.
+Skipping the product left room for both modes at \(n = 768\), 121\,s then 33\,s, in one job.
+A sequential \(1024 \times 1024\) determinant would be about another factor of 2.4 beyond the 121\,s point, near 5 minutes before the nodes boot, so it was not run.
+Extending the full-program 254\,s measurement at \(n = 512\) by \((4000/512)^3\) puts a cached sequential \(4000 \times 4000\) run near 34 hours on these cluster CPUs.
 That case was not run.
 The assignment's 20-minute cached figure remains the Apple M3 Max note, measured on a different implementation and a different computer.

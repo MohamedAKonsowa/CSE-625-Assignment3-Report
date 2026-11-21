@@ -2,18 +2,20 @@
 \label{sec:results}
 
 The cache comparison used the group driver on one process, with seed 123456.
-The cached build links Jacob Nance's finite-field fork at commit \texttt{8d784eaf}.
-The original build links the instructor field at commit \texttt{74b3d569}.
-The matrix library is the same instructor commit in both builds.
-The compiler is g++ 16.2 with \texttt{-O3} and \texttt{NDEBUG}.
+One build links Jacob Nance's cached finite field.
+The other links the instructor's original finite field.
+Both builds use the same matrix library, the same driver, and the same compiler flags.
+The compiler is g++ 16.2 with \texttt{-O3}.
 The machine is an AMD Ryzen 9 7900X with 12 cores and 32\,GB of RAM, running 64-bit Windows.
 Only one thread was used.
-Times in Table~\ref{tab:cache} are the driver's steady clock, including construction of the addition and multiplication tables on the cached runs.
+Each row in Table~\ref{tab:cache} is a separate binary, because the matrix dimension is a compile-time constant.
+Times are the driver's steady clock.
+On the cached runs that clock includes construction of the addition and multiplication tables.
 Peak memory is the peak working set reported by Windows for that process.
-The dimension is a compile-time constant, so each size is a separate binary.
+Every run printed \(\det(C) = \det(A)\det(B)\) as true.
 
 \begin{table}[!t]
-\caption{Cache comparison on one PC thread. A dash means that size was not run for that build.}
+\caption{Cache comparison on one PC thread. Both fields were run at every size.}
 \label{tab:cache}
 \centering
 \scriptsize
@@ -21,24 +23,24 @@ The dimension is a compile-time constant, so each size is a separate binary.
 \toprule
 \(n\) & Cached (s) & Original (s) & Cached (MB) & Original (MB) \\
 \midrule
-8   & 1.18  & 0.009 & 159 & 4.9 \\
-32  & ---   & 0.25  & --- & 4.6 \\
-64  & 1.56  & 1.96  & 159 & 5.4 \\
-128 & ---   & 15.1  & --- & 7.9 \\
-256 & 25.3  & 120.1 & 172 & 18.2 \\
-512 & 194.4 & ---   & 214 & --- \\
+8   & 1.18  & 0.007 & 159 & 4.8 \\
+32  & 1.22  & 0.022 & 159 & 4.2 \\
+64  & 1.58  & 0.145 & 159 & 4.7 \\
+128 & 4.27  & 1.13  & 162 & 7.8 \\
+256 & 25.9  & 9.35  & 172 & 18.2 \\
+512 & 199.2 & 78.8  & 214 & 59.3 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-The cached process spends about 1.2\,s filling the tables before any matrix work.
-At \(n = 8\) that fill is the whole run, and the original field finishes in 0.009\,s.
-At \(n = 64\) the cached total drops below the original, 1.56\,s against 1.96\,s.
-That is the smallest measured size at which the cached field is faster on total time.
-The arithmetic itself, the product plus the three determinants, is 4.9 times faster at \(n = 64\) (0.39\,s cached, 1.95\,s original) and 5.0 times faster at \(n = 256\) (24.1\,s cached, 120.0\,s original).
-At \(n = 256\) the product is about half of that arithmetic and the three determinants are nearly equal, which matches one elimination each on \(A\), \(B\), and \(C = AB\).
-Cached time from \(n = 256\) to \(n = 512\) grew by a factor of 7.7, close to the factor of 8 expected from an \(n^3\) determinant and product.
-Figure~\ref{fig:cache} shows the three sizes both builds ran.
+The original field is faster at every size in Table~\ref{tab:cache}.
+The cached field spends about 1.2\,s building the tables before the matrices are filled, and at \(n = 8\) that construction is the whole run.
+The gap is not only the construction.
+The product and the three determinants together take 24.7\,s with the tables and 9.3\,s without them at \(n = 256\), and 198\,s against 78.8\,s at \(n = 512\).
+That arithmetic ratio stays near 2.5, so a larger matrix does not reverse the result once the tables already exist.
+Cached time from \(n = 256\) to \(n = 512\) grew by a factor of 7.7, and the original time grew by a factor of 8.4.
+Both are close to the factor of 8 expected from an \(n^3\) product and determinant.
+Figure~\ref{fig:cache} shows the six sizes.
 
 \begin{figure}[!t]
 \centering
@@ -46,36 +48,28 @@ Figure~\ref{fig:cache} shows the three sizes both builds ran.
 \begin{axis}[
   ieee lines,
   ymode=log,
-  ymin=0.005,
+  ymin=0.004,
   ylabel={Total time (s)},
   xlabel={Matrix dimension \(n\)},
-  symbolic x coords={8,64,256},
+  symbolic x coords={8,32,64,128,256,512},
 ]
-\addplot coordinates {(8,1.179) (64,1.563) (256,25.291)};
-\addplot coordinates {(8,0.008522) (64,1.962) (256,120.142)};
+\addplot coordinates {(8,1.176568) (32,1.223951) (64,1.583324) (128,4.268527) (256,25.910591) (512,199.213509)};
+\addplot coordinates {(8,0.007397) (32,0.021861) (64,0.145319) (128,1.130719) (256,9.353974) (512,78.848572)};
 \legend{Cached, Original}
 \end{axis}
 \end{tikzpicture}
-\caption{Total runtime on the PC, including table construction. The vertical axis is logarithmic so the \(8 \times 8\) original run remains visible.}
+\caption{Total runtime on the PC. The cached times include table construction. The vertical axis is logarithmic.}
 \label{fig:cache}
 \end{figure}
 
-Peak memory does not follow the runtime improvement.
+Peak memory moves the other way from the runtime.
 The cached working set is about 159\,MB from \(n = 8\) through \(n = 64\), which is the addition and multiplication tables, and rises to 214\,MB at \(n = 512\) as the matrices grow.
-The original working set stays near 5\,MB until the matrices matter, and is 18\,MB at \(n = 256\).
-On this implementation the cache adds memory.
-It does not shrink the stored matrices.
-
-The \(256 \times 256\) pair was run a second time.
-The cached repeat was 25.8\,s and 172\,MB.
-The original repeat was 120.2\,s and 18\,MB.
-Both repeats agreed with Table~\ref{tab:cache}.
-Every run in the table printed \(\det(C) = \det(A)\det(B)\) as true.
+The original working set stays near 5\,MB until the matrices matter, then 18\,MB at \(n = 256\) and 59\,MB at \(n = 512\).
+On this implementation the tables add memory.
+They do not shrink the stored matrices.
 
 A \(4000 \times 4000\) pair was not run.
-Extending the cached 194\,s measurement at \(n = 512\) by \((4000/512)^3\) puts that size near 26 hours on this CPU.
-The assignment note of about 20 minutes for a cached \(4000 \times 4000\) run, and about 6 hours 40 minutes for the original, was taken on an Apple M3 Max.
-Those notes are a different machine.
-They are not a prediction for the table layout timed here.
-The original field was not run at \(n = 512\) on this PC.
-The \(n^3\) step from the 120\,s original run at \(n = 256\) puts that missing point near 16 minutes.
+Extending the measurements at \(n = 512\) by \((4000/512)^3\) puts the cached run near 26 hours on this CPU and the original run near 10 hours.
+The assignment note of about 20 minutes for a cached \(4000 \times 4000\) matrix, and about 6 hours 40 minutes for the original, was taken on an Apple M3 Max.
+Those notes are a different machine and a different table layout.
+They are not a prediction for the runs in Table~\ref{tab:cache}.
