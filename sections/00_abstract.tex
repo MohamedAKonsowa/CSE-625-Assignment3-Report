@@ -1,5 +1,12 @@
 \begin{abstract}
-\writer{Whole group, after the sections below are filled}{%
-Replace this box with a short abstract: what was cached, the runtime and memory change, and the matrix size where MPI became faster.
-Do not submit the paper with this box still in it.}
+A determinant program over the finite field of order \(11^3 = 1331\) spends nearly all of its time in polynomial arithmetic on individual field elements.
+This paper replaces the \texttt{FiniteFieldElement} class of the finite-field library with a cached version that precomputes every sum, product, and reciprocal in lookup tables indexed by element.
+The public interface, header paths, and type names are unchanged, so the driver and the matrix library switch between the original and cached arithmetic by changing one CMake dependency.
+On one thread of an AMD Ryzen 9 7900X, the cached field computes the matrix product and the three determinants about five times faster than the original field.
+Including the table construction, it is faster from \(n = 64\) upward, and a \(512 \times 512\) run drops from 976\,s to 194\,s.
+The speedup costs memory.
+Building the tables takes about 1.2\,s and raises peak memory from about 5\,MB to 159\,MB at small sizes, and from 60\,MB to 214\,MB at \(n = 512\).
+The determinant is then distributed with a blocked PLU factorization over MPI.
+On a four-machine cluster with eight ranks, MPI beat the cached sequential determinant at the smallest tested size, \(n = 64\), and was 4.0 times faster at \(n = 768\).
+For the complete program, which keeps the matrix product on one rank, MPI first wins at \(n = 256\).
 \end{abstract}

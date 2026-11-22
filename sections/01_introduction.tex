@@ -1,6 +1,27 @@
 \section{Introduction}
 \label{sec:introduction}
 
-\writer{Whole group}{%
-Describe the program: \(C = AB\) over the field of order \(11^3\), then \(\det(A)\), \(\det(B)\), and \(\det(C)\), with the check \(\det(C) = \det(A)\det(B)\).
-State the three questions the assignment asks: which class was cached, how runtime and memory changed, and at what size MPI beats the cached sequential determinant.}
+This paper studies a program that computes determinants of large matrices over the finite field of order \(11^3 = 1331\).
+The program fills two \(n \times n\) matrices \(A\) and \(B\) with seeded random elements, forms \(C = AB\), computes \(\det(A)\), \(\det(B)\), and \(\det(C)\) by Gaussian elimination, and checks that
+\[
+\det(C) = \det(A)\det(B).
+\]
+Each field element is a polynomial of degree less than three with coefficients modulo 11.
+Every addition and multiplication therefore requires polynomial arithmetic followed by reduction modulo an irreducible cubic, and every reciprocal requires the extended Euclidean algorithm.
+Because the product and each determinant perform on the order of \(n^3\) of these operations, field arithmetic dominates the running time.
+
+The program is split across three repositories: a driver, a matrix library, and a finite-field library.
+The aim of this work is to make it faster without restructuring that chain.
+Since the field has only 1331 elements, every possible sum and product can be computed once and looked up afterward.
+A single class is replaced with a cached drop-in version, and the determinant is then distributed across machines with MPI.
+
+The paper answers three questions.
+\begin{enumerate}
+  \item Which class should be cached, and where does it sit in the dependency chain?
+  \item How do runtime and peak memory change when the cached class replaces the original?
+  \item What is the smallest matrix size at which an MPI determinant is faster than the cached sequential one?
+\end{enumerate}
+
+Caching the finite-field element class made the arithmetic about five times faster, at the cost of raising peak memory from about 5\,MB to 159\,MB.
+An eight-rank MPI determinant overtook the cached sequential version at the smallest size tested, \(n = 64\).
+Section~\ref{sec:chain} describes the dependency chain, Sections~\ref{sec:cache} and~\ref{sec:results} the cache and its measurements, Sections~\ref{sec:mpi} and~\ref{sec:mpi-results} the MPI determinant and its measurements, and Section~\ref{sec:conclusions} concludes.
