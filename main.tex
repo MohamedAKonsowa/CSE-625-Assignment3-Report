@@ -27,6 +27,7 @@
 \usepackage{algpseudocode}
 \usepackage{stfloats}
 \usepackage{placeins}
+\usepackage{needspace}
 \usepackage{listings}
 \lstdefinestyle{cpp}{
   language=C++,
@@ -110,6 +111,14 @@
     enlarge x limits=0.15,
     mark=*,
     mark size=1.6pt,
+  },
+  ours/.style={
+    blue!80!black,
+    mark options={fill=blue!80!black},
+  },
+  baseline/.style={
+    black!55,
+    mark options={fill=black!55},
   }
 }
 

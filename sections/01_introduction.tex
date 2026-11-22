@@ -22,6 +22,6 @@ The paper answers three questions.
   \item What is the smallest matrix size at which an MPI determinant is faster than the cached sequential one?
 \end{enumerate}
 
-Caching the finite-field element class made the arithmetic about five times faster, at the cost of raising peak memory from about 5\,MB to 159\,MB.
-An eight-rank MPI determinant overtook the cached sequential version at the smallest size tested, \(n = 64\).
+Caching the finite-field element class made a \(512 \times 512\) run about 26 times faster, and added about 7\,MB.
+An eight-rank MPI determinant tied the cached sequential determinant at \(n = 512\), was faster at \(n = 768\), and reached 1.6 times at \(n = 2048\).
 Section~\ref{sec:chain} describes the dependency chain, Sections~\ref{sec:cache} and~\ref{sec:results} the cache and its measurements, Sections~\ref{sec:mpi} and~\ref{sec:mpi-results} the MPI determinant and its measurements, and Section~\ref{sec:conclusions} concludes.

@@ -2,29 +2,21 @@
 \label{sec:conclusions}
 
 The cached class is \texttt{FiniteFieldElement}, the element type of \texttt{FiniteField<11, 3>} at the bottom of the dependency chain.
-Every matrix operation in the program reduces to sums, products, and reciprocals of these elements, so caching them speeds up the product and all three determinants at once.
-The cached version keeps the original interface.
+Every matrix operation in the program reduces to sums, products, and reciprocals of these elements.
+The cached element stores the index of those coefficients, and the operation tables store the index of the result.
 The driver and the matrix library switch between the two fields by changing one CMake dependency and nothing else.
 
-Caching made the arithmetic about five times faster on one thread.
-The tables cost about 1.2\,s to build, so the cached field loses on very small matrices and is faster in total from \(n = 64\) upward.
-At \(n = 512\) the total time fell from 976\,s to 194\,s.
-Both fields scale close to \(n^3\), so the gap holds at larger sizes.
+On one thread the tables take about 0.54\,s to build, so the cached field is slower in total at \(n = 64\).
+It is faster at the measured sizes \(n = 256\) and \(n = 512\).
+At \(n = 512\) the total time fell from 78.8\,s to 2.99\,s, and the arithmetic inside that run was about 33 times faster.
+The tables add about 7\,MB.
+Peak memory was 66\,MB against 59\,MB at \(n = 512\), because the matrices dominate and the element no longer keeps a polynomial on the hot path.
 
-Memory went the other way.
-The addition and multiplication tables hold about 1.77 million entries each, which sets a floor of about 159\,MB against about 5\,MB for the original field.
-At \(n = 512\) the cached run peaked at 214\,MB against 60\,MB.
-The assignment's reference figures show a cached field using less memory than the original.
-This implementation does not, because the matrices still store each element as a polynomial and the tables are added on top.
-Storing each matrix entry as its table index would shrink the matrices as well, and is the clearest next step.
+The blocked PLU determinant over MPI sends that index.
+With eight ranks and block size 32, the one-determinant times meet at \(n = 512\) and MPI is faster from \(n = 768\).
+At \(n = 2048\) the eight-rank time is 22.96\,s against 36.05\,s on one rank.
+That margin is still smaller than the gain from the cache itself.
+Rank 0 still owns every matrix and still sends the trailing submatrix out and back on each panel, and the matrix product was left on rank 0.
+Distributing ownership of the rows would be the next change to the parallel determinant.
 
-The blocked PLU determinant over MPI was faster than the cached sequential determinant at \(n = 64\), the smallest size tested.
-The margin there is small, 0.071\,s against 0.078\,s, and the advantage grows to 4.0 times at \(n = 768\).
-For the complete program the break-even point is \(n = 256\), because the matrix product stays on rank 0.
-Rank 0 also owns every matrix and sends the trailing submatrix out and back for each panel.
-Distributing ownership of the rows, and parallelizing the product, would move both break-even points down.
-
-The \(4000 \times 4000\) case was not run on either machine.
-On the PC it would take about a day, and the cluster partition allows only five minutes per job, so the reference timings remain the only figures at that size.
-The PC and cluster measurements also come from different hardware and should not be compared directly.
-Within those limits, the results follow the assignment's order of work: caching the expensive arithmetic gave the largest single improvement, and MPI added a further speedup once the matrices were large enough to outweigh the communication.
+Across the sizes that were run on this PC and on the cluster, caching the field element gave the large reduction in time, and MPI was faster once the determinant was large enough to cover the communication.
