@@ -1,22 +1,34 @@
 \section{Conclusions}
 \label{sec:conclusions}
 
-The cached class is \texttt{FiniteFieldElement}, the element type of \texttt{FiniteField<11, 3>} at the bottom of the dependency chain.
-Every matrix operation in the program reduces to sums, products, and reciprocals of these elements.
-The cached element stores the index of those coefficients, and the operation tables store the index of the result.
-The driver and the matrix library switch between the two fields by changing one CMake dependency and nothing else.
+For this project we improved the performance of determinant evaluation over finite-fields of cubic scale numbers (containing 1331 elements) without changing the structure or public behavior of the existing software.
+The improved implementation is divided across three repositories: a finite-field library, a matrix library, and a driver program. Elements of the finite-field library are represented as polynomials of degree less than three.
+The original implementation preforms polynomial addition and multiplication followed by modular reduction, and uses an extended Euclidean algorithm to compute reciprocals. These operations are the main cause of the high sequential determinant costs because Gaussian elimination performs cubic scale numbers (\(n^3\)) of operations.
 
-On one thread the tables take about 0.54\,s to build, so the cached field is slower in total at \(n = 64\).
-It is faster at the measured sizes \(n = 256\) and \(n = 512\).
-At \(n = 512\) the total time fell from 78.8\,s to 2.99\,s, and the arithmetic inside that run was about 33 times faster.
-The tables add about 7\,MB.
-Peak memory was 66\,MB against 59\,MB at \(n = 512\), because the matrices dominate and the element no longer keeps a polynomial on the hot path.
+Therefore the finite-field arithmetic was moved from direct computation to lookup tables. The cached class \texttt{FiniteFieldElement} is the element type with an integer index of 0 to 1330 and uses precomputed tables for every sum, product, subtraction, and reciprocal.
+This makes it so most finite-field operations are reduced to table indexing rather than polynomial arithmetic.
+The cache class \texttt{FiniteFieldElement} is also used by the same \texttt{FiniteField<11, 3>} interface that is used by the matrix library.
+The matrix library and driver are able to select between the original and cached implementations by changing a single CMake dependency while requiring no matrix algorithms or public API restructuring.\
 
-The blocked PLU determinant over MPI sends that index.
-With eight ranks and block size 32, the one-determinant times meet at \(n = 512\) and MPI is faster from \(n = 768\).
-At \(n = 2048\) the eight-rank time is 22.96\,s against 36.05\,s on one rank.
-That margin is still smaller than the gain from the cache itself.
-Rank 0 still owns every matrix and still sends the trailing submatrix out and back on each panel, and the matrix product was left on rank 0.
-Distributing ownership of the rows would be the next change to the parallel determinant.
+The benefits of these changes are reflected in the calculated sequential measurements.
+While the cached implementation takes 0.54\,s during table construction making it slower than the original for the smallest measurement of \(n=64\), at increased matrix sizes the cache implementation improves runtime significantly.
+At \(n=256\), the cached implementation improves runtime from 9.35\,s to 0.87\,s!
+At \(n=512\), it improves runtime from 78.8\,s to 2.99\,s, for an approximately \(26.4\times\) total speedup!
+Additionally, at \(n=512\), the arithmetic calculations ran approximately \(33\times\) faster than the original
+implementation. These results show that precomputing finite-field operation is an effective method of reducing runtime costs when the matrices contain enough field arithmetic to amortize table construction.
 
-Across the sizes that were run on this PC and on the cluster, caching the field element gave the large reduction in time, and MPI was faster once the determinant was large enough to cover the communication.
+The cache implementation does increase the memory costs with analysis showing a peak memory increase from from 18\,MB to 25\,MB at \(n = 256\) and an increase of 59\,MB to 66\,MB at \(n = 512\).
+However, it should be noted that the difference at \(n = 256\) and \(n = 512\) is small relative to the cost of the matrix-storage.
+
+The MPI analysis shows that the implementation becomes competitive when the determinant is large enough to amortize communication and synchronization.
+In a four-machine cluster with eight ranks, the MPI determinant approximately matches the cached sequential time at \(n=512\).
+It is faster at \(n=768\), with MPI dividing the elapsed time by 0.67 relative to the sequential implementation.
+At \(n=2048\), MPI reduces the eight-rank runtime from 36.05\,s to 22.96\,s which is a \(1.6\times\) speedup. The MPI benefit is therefore significant at large sizes, but still smaller than the benefit obtained by caching finite-field arithmetic.
+
+The cache and MPI optimizations affect different parts of the implementation.
+Caching removes expensive field-element operations from the computational kernel, while MPI separates work among machines and introduces communication between ranks.
+The cache gives the largest benefit at large measured matrices, while MPI is useful for large determinants.
+The current bottlenecks are: rank 0's ownership of the complete matrix, repeated transfer of the trailing submatrix during panel factorization, and the matrix product being outside the distributed path.
+
+Overall, representing field elements by integer indices and precomputing field operations significantly reduces sequential determinant and matrix arithmetic runtime while preserving the existing software interfaces.
+Blocked MPI factorization provides additional improvement for large matrices, but introduced communication overhead near the crossover size.
