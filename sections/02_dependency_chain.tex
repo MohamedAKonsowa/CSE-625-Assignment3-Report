@@ -6,6 +6,10 @@ The driver in \texttt{src/main.cpp} builds the two random matrices, multiplies t
 Each matrix entry is an element of \texttt{FiniteField} of order \(11^3\).
 
 \texttt{FiniteField} lives in the finite-field library.
+The library is at
+\url{https://github.com/JacobNance142/algebra-finite-fields-group2},
+and the driver repository is at
+\url{https://github.com/hoop3r/group2-algebra-assignment}.
 The matrix library does not know about that field.
 Its \texttt{Matrix} template calls addition, multiplication, and reciprocal on whatever entry type it is given, so the same matrix code runs for the cached field and for the original field.
 The driver is the only place that chooses \texttt{FiniteField<11, 3>}.

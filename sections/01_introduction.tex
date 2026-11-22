@@ -10,7 +10,10 @@ Each field element is a polynomial of degree less than three with coefficients m
 Every addition and multiplication, therefore, requires polynomial arithmetic followed by reduction modulo an irreducible cubic, while reciprocals require the extended-Euclidean computation.
 Because the matrix multiplication and determinant evaluation use cubic scale numbers (\(n^3\)) of these operations, finite-field arithmetic dominates the execution time.
 
-The implementation is divided across three sections: a driver repository, a matrix library, and a finite-field library.
+The implementation is divided across three sections: a
+\href{https://github.com/hoop3r/group2-algebra-assignment}{driver repository},
+a matrix library, and a
+\href{https://github.com/JacobNance142/algebra-finite-fields-group2}{finite-field library}.
 The goal of this work is to make it reduce field-operation costs without restructuring the dependency chain or public interfaces.
 Since the field only contains 1331 elements, the results of every possible sum and product can be precomputed and later looked up.
 thus, we replace the finite-field element implementation with a cached, API-compatible class and distribute the determinant evaluation across machines with MPI.
